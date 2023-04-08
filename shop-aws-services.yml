@@ -1,0 +1,80 @@
+openapi: 3.0.0
+components:
+  schemas:
+    product-item:
+      type: object
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        count:
+          type: number
+        title:
+          type: string
+    error-response:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: string
+        error:
+          type: string
+  securitySchemes: {}
+info:
+  title: Product Service
+  description: Product Service API
+  version: '1'
+paths:
+  '/products/{id}':
+    get:
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The item ID
+      operationId: get-product-by-id
+      summary: GET item by ID
+      description: get product item by id
+      responses:
+        '201':
+          description: returns product item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/product-item'
+        '404':
+          description: Status 404 Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error-response'
+        '500':
+          description: product item was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error-response'
+  /products:
+    get:
+      operationId: get-products-list
+      summary: GET items
+      description: get product items list
+      responses:
+        '201':
+          description: returns product items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/product-item'
+        '500':
+          description: product item was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error-response'

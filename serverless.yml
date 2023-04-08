@@ -1,0 +1,38 @@
+service: product-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  profile: denis-kravchenko
+  stage: dev
+
+plugins:
+  - serverless-webpack
+  - serverless-functions-base-path
+
+custom:
+  functionsBasePath: product-service/product-service-handlers
+  webpack:
+    webpackConfig: "./webpack.config.js"
+    includeModules: true
+    keepOutputDirectory: true
+
+functions:
+  getProductById:
+    handler: get-product-by-id/get-product-by-id.handler
+    events:
+      - http:
+          method: GET
+          path: products/{id}
+          cors: true
+
+  getProductsList:
+    handler: get-products-list/get-products-list.handler
+    events:
+      - http:
+          method: GET
+          path: products
+          cors: true
