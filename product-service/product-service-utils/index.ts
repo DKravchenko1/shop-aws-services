@@ -24,3 +24,11 @@ export const getResult = (result) => {
     body: JSON.stringify(result),
   }
 }
+
+export const getValidationError = (error) => {
+  return {
+    statusCode: 400,
+    headers,
+    message: error,
+  }
+}

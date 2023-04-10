@@ -8,6 +8,22 @@ provider:
   region: us-east-1
   profile: denis-kravchenko
   stage: dev
+  environment:
+    PRODUCT_TABLE_NAME: "ProductTable"
+    STOCK_TABLE_NAME: "StockTable"
+    CART_TABLE: "CartTable"
+  cors: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:ConditionCheckItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: "*"
 
 plugins:
   - serverless-webpack
@@ -19,6 +35,52 @@ custom:
     webpackConfig: "./webpack.config.js"
     includeModules: true
     keepOutputDirectory: true
+
+resources:
+  Resources:
+    ProductTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.PRODUCT_TABLE_NAME}
+    StockTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "product_id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "product_id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.STOCK_TABLE_NAME}
+    CartTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "product_id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "product_id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.CART_TABLE}
+
 
 functions:
   getProductById:
@@ -35,4 +97,20 @@ functions:
       - http:
           method: GET
           path: products
+          cors: true
+
+  createProduct:
+    handler: create-product/create-product.handler
+    events:
+      - http:
+          method: POST
+          path: products
+          cors: true
+
+  setItemToCart:
+    handler: set-product-to-cart/set-product-to-cart.handler
+    events:
+      - http:
+          method: POST
+          path: profile/cart
           cors: true

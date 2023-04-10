@@ -1,9 +1,12 @@
-export type ProductEntity = {
-  id: string;
+export type ProductDTO = {
   count: number;
   description: string;
   title: string;
   price: number;
+}
+
+export type ProductEntity = ProductDTO & {
+  id: string;
 };
 
 export type Response = {
@@ -15,4 +18,6 @@ export type Response = {
 export interface IService {
   getItemById: (APIGatewayProxyEventV2) => Promise<Response>;
   getItems: () => Promise<Response>;
+  setItemToCart: (id: string, count: number) => Promise<Response>;
+  createItem: (data: ProductDTO) => Promise<Response>;
 }
