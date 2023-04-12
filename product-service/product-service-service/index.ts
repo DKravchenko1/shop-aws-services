@@ -1,5 +1,5 @@
 import { productRepository } from '../product-service-repository';
-import { IService } from '../product-service-types';
+import { IService, ProductDTO } from '../product-service-types';
 import { getInternalError, getNoFoundError, getResult } from '../product-service-utils';
 
 export const ProductServiceService: IService = {
@@ -26,6 +26,23 @@ export const ProductServiceService: IService = {
         return getNoFoundError();
       }
       return getResult(items);
+    } catch (e) {
+      console.log(e);
+      return getInternalError(e);
+    }
+  },
+
+  setItemToCart: async (id, count) => {
+    try {
+      return getResult(await productRepository.setItemToCart(id, count));
+    } catch (e) {
+      return getInternalError(e);
+    }
+  },
+
+  createItem: async (productDTO: ProductDTO) => {
+    try {
+      return getResult(await productRepository.createItem(productDTO))
     } catch (e) {
       return getInternalError(e);
     }

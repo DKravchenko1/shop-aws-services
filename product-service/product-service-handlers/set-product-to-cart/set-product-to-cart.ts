@@ -4,7 +4,7 @@ import {ProductServiceService} from '../../product-service-service';
 export const handler: APIGatewayProxyHandlerV2 = async (
   event: APIGatewayProxyEventV2
 ) => {
-  console.log(`incoming data -> ${event.queryStringParameters}`);
+  const { id, count } = JSON.parse(event?.body) || {};
 
-  return ProductServiceService.getItemById(event);
+  return ProductServiceService.setItemToCart(id, count);
 };
