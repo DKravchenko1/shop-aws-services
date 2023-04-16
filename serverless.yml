@@ -1,4 +1,4 @@
-service: product-service
+service: product-service-1
 
 frameworkVersion: '3'
 
@@ -9,32 +9,50 @@ provider:
   profile: denis-kravchenko
   stage: dev
   environment:
-    PRODUCT_TABLE_NAME: "ProductTable"
-    STOCK_TABLE_NAME: "StockTable"
-    CART_TABLE: "CartTable"
-  cors: true
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:ConditionCheckItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-      Resource: "*"
+    PRODUCT_TABLE_NAME: "ProductTable-1"
+    STOCK_TABLE_NAME: "StockTable-1"
+    CART_TABLE: "CartTable-1"
+    UPLOADED_BUCKET_NAME: "denis-kravchenko-uploaded-files-1"
+  iam:
+    role:
+      name: DynamoDBAccessRole
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:ConditionCheckItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource: "*"
+        - Effect: Allow
+          Action: "s3:ListBucket"
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.UPLOADED_BUCKET_NAME}
+        - Effect: Allow
+          Action:
+            - "s3:GetObject"
+            - "s3:PutObject"
+            - "s3:PutObjectAcl"
+            - "s3:DeleteObject"
+            - "s3:DeleteObjectAcl"
+            - "s3:CopyObject"
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.UPLOADED_BUCKET_NAME}/*"
+            - arn:aws:s3:::${self:provider.environment.UPLOADED_BUCKET_NAME}
 
 plugins:
   - serverless-webpack
   - serverless-functions-base-path
 
 custom:
-  functionsBasePath: product-service/product-service-handlers
   webpack:
     webpackConfig: "./webpack.config.js"
     includeModules: true
     keepOutputDirectory: true
+  s3BucketName: ${self:provider.environment.UPLOADED_BUCKET_NAME}
 
 resources:
   Resources:
@@ -80,11 +98,28 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.CART_TABLE}
+    UploadedFilesS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3BucketName}
+        AccessControl: Private
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - HEAD
+                - POST
+                - DELETE
+              AllowedOrigins:
+                - "*"
 
 
 functions:
   getProductById:
-    handler: get-product-by-id/get-product-by-id.handler
+    handler: product-service/product-service-handlers/get-product-by-id/get-product-by-id.handler
     events:
       - http:
           method: GET
@@ -92,7 +127,7 @@ functions:
           cors: true
 
   getProductsList:
-    handler: get-products-list/get-products-list.handler
+    handler: product-service/product-service-handlers/get-products-list/get-products-list.handler
     events:
       - http:
           method: GET
@@ -100,7 +135,7 @@ functions:
           cors: true
 
   createProduct:
-    handler: create-product/create-product.handler
+    handler: product-service/product-service-handlers/create-product/create-product.handler
     events:
       - http:
           method: POST
@@ -108,9 +143,31 @@ functions:
           cors: true
 
   setItemToCart:
-    handler: set-product-to-cart/set-product-to-cart.handler
+    handler: product-service/product-service-handlers/set-product-to-cart/set-product-to-cart.handler
     events:
       - http:
           method: POST
           path: profile/cart
           cors: true
+
+  importProductsFile:
+    handler: import-service/import-service-handlers/import-product-file.handler
+    events:
+      - http:
+          method: GET
+          path: import
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                name: true
+
+  importFileParser:
+    handler: import-service/import-service-handlers/import-file-parser.handler
+    events:
+      - s3:
+          bucket: !Ref UploadedFilesS3Bucket
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploaded/
+          existing: true
