@@ -12,25 +12,27 @@ provider:
     PRODUCT_TABLE_NAME: "ProductTable"
     STOCK_TABLE_NAME: "StockTable"
     CART_TABLE: "CartTable"
-  cors: true
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:ConditionCheckItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-      Resource: "*"
+  iam:
+    role:
+      name: DynamoDBAccessRole
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:ConditionCheckItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource: "*"
 
 plugins:
   - serverless-webpack
   - serverless-functions-base-path
 
 custom:
-  functionsBasePath: product-service/product-service-handlers
+  functionsBasePath: product-service-handlers
   webpack:
     webpackConfig: "./webpack.config.js"
     includeModules: true

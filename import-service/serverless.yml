@@ -1,0 +1,87 @@
+service: import-service
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  profile: denis-kravchenko
+  stage: dev
+  environment:
+    UPLOADED_BUCKET_NAME: "denis-kravchenko-uploaded-files"
+  iam:
+    role:
+      name: ImportFilesRole
+      statements:
+        - Effect: Allow
+          Action:
+            - "s3:GetObject"
+            - "s3:PutObject"
+            - "s3:PutObjectAcl"
+            - "s3:DeleteObject"
+            - "s3:DeleteObjectAcl"
+            - "s3:CopyObject"
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.UPLOADED_BUCKET_NAME}/*"
+            - arn:aws:s3:::${self:provider.environment.UPLOADED_BUCKET_NAME}
+        - Effect: Allow
+          Action: "s3:ListBucket"
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.UPLOADED_BUCKET_NAME}
+
+
+plugins:
+  - serverless-webpack
+  - serverless-functions-base-path
+
+custom:
+  functionBasePath: "product-service/product-service-handlers"
+  webpack:
+    webpackConfig: "./webpack.config.js"
+    includeModules: true
+    keepOutputDirectory: true
+  s3BucketName: ${self:provider.environment.UPLOADED_BUCKET_NAME}
+
+resources:
+  Resources:
+    UploadedFilesS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3BucketName}
+        AccessControl: Private
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - HEAD
+                - POST
+                - DELETE
+              AllowedOrigins:
+                - "*"
+
+functions:
+  importProductsFile:
+    handler: import-service-handlers/import-product-file.handler
+    events:
+      - http:
+          method: GET
+          path: import
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                name: true
+
+  importFileParser:
+    handler: import-service-handlers/import-file-parser.handler
+    events:
+      - s3:
+          bucket: !Ref UploadedFilesS3Bucket
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploaded/
+          existing: tru
