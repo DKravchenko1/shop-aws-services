@@ -1,5 +1,7 @@
 # package directories
 node_modules
+import-service/node_modules
+product-service/node_modules
 jspm_packages
 
 # Serverless directories
