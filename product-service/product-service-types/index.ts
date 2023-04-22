@@ -18,6 +18,5 @@ export type Response = {
 export interface IService {
   getItemById: (APIGatewayProxyEventV2) => Promise<Response>;
   getItems: () => Promise<Response>;
-  setItemToCart: (id: string, count: number) => Promise<Response>;
   createItem: (data: ProductDTO) => Promise<Response>;
 }

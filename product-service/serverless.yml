@@ -1,6 +1,6 @@
 service: product-service
 
-frameworkVersion: '3'
+frameworkVersion: '3.30'
 
 provider:
   name: aws
@@ -12,6 +12,8 @@ provider:
     PRODUCT_TABLE_NAME: "ProductTable"
     STOCK_TABLE_NAME: "StockTable"
     CART_TABLE: "CartTable"
+    CATALOG_ITEMS_QUEUE_NAME: "catalogItemsQueue"
+    CREATE_PRODUCT_SNS_TOPIC: "createProductTopic"
   iam:
     role:
       name: DynamoDBAccessRole
@@ -25,6 +27,23 @@ provider:
             - dynamodb:DeleteItem
             - dynamodb:GetItem
             - dynamodb:PutItem
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+            - sqs:ReceiveMessage
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - lambda:CreateEventSourceMapping
+            - lambda:ListEventSourceMappings
+            - lambda:ListFunctions
+          Resource:
+            Fn::GetAtt:
+              - CatalogItemsQueue
+              - Arn
+        - Effect: "Allow"
+          Action:
+            - sns:Publish
+            - sns:Subscribe
           Resource: "*"
 
 plugins:
@@ -82,7 +101,56 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.CART_TABLE}
-
+    CatalogItemsQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:provider.environment.CATALOG_ITEMS_QUEUE_NAME}
+    ImportParsedFileSNSToAddDataSQSPolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - Ref: CatalogItemsQueue
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: "SNS to SQS"
+              Effect: Allow
+              Principal:
+                Service: "sns.amazonaws.com"
+              Resource: !GetAtt CatalogItemsQueue.Arn
+              Action: SQS:SendMessage
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !ImportValue ImportParsedDataTopicSNSArn
+    CreateProductSNSTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: ${self:provider.environment.CREATE_PRODUCT_SNS_TOPIC}
+    CreateProductSNSTopicSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: email
+        TopicArn: !Ref CreateProductSNSTopic
+        Endpoint: denis_kravchenko1@epam.com
+        FilterPolicyScope: MessageBody
+        FilterPolicy:
+          title:
+            - prefix: "ui-"
+    ErrorCreateProductSNSTopicSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: email
+        TopicArn: !Ref CreateProductSNSTopic
+        Endpoint: kravchenkoDenis1992@gmail.com
+        FilterPolicyScope: MessageBody
+        FilterPolicy:
+          title:
+            - prefix: "csv-"
+  Outputs:
+    CatalogItemsQueueOutput:
+      Value: !GetAtt CatalogItemsQueue.Arn
+      Export:
+        Name: CatalogItemsQueueArn
 
 functions:
   getProductById:
@@ -109,10 +177,15 @@ functions:
           path: products
           cors: true
 
-  setItemToCart:
-    handler: set-product-to-cart/set-product-to-cart.handler
+  catalogBatchProcess:
+    handler: catalog-batch-process/catalog-batch-process.handler
+    environment:
+      TOPIC_ARN:
+        Ref: CreateProductSNSTopic
     events:
-      - http:
-          method: POST
-          path: profile/cart
-          cors: true
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - CatalogItemsQueue
+              - Arn
+          batchSize: 5

@@ -1,49 +1,40 @@
-import { DynamoDB } from 'aws-sdk'
+import { DynamoDB, GetItemCommand, ScanCommand, TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb';
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuid } from 'uuid';
 
-const dbClient = new DynamoDB.DocumentClient();
+const dbClient = new DynamoDB({});
 
 export const productRepository = {
-  getItemById: async (id: string) => {
-    const { Item: productItem = {} } = await dbClient.get({
+  getItemById: async ({id}) => {
+    const productCommand = new GetItemCommand({
       TableName: process.env.PRODUCT_TABLE_NAME,
-      Key: { id: id }
-    }).promise();
+      Key: marshall({ id }),
+    });
 
-    const { Item: stockItem = {} } = await dbClient.get({
+    const stockCommand = new GetItemCommand({
       TableName: process.env.STOCK_TABLE_NAME,
-      Key: { product_id: id }
-    }).promise();
+      Key: marshall({ product_id: id })
+    });
+    const { Item: productItem = {} } = await dbClient.send(productCommand);
+    const { Item: stockItem = {} } = await dbClient.send(stockCommand);
 
-    return { ...productItem, ...stockItem };
+    return { ...unmarshall(productItem), ...unmarshall(stockItem) };
   },
 
   getItems: async () => {
-    const { Items: productItems = [] } = await dbClient.scan({
+    const productCommand = new ScanCommand({
       TableName: process.env.PRODUCT_TABLE_NAME,
-    }).promise();
-
-    const { Items: stockItems = [] } = await dbClient.scan({
+      ConsistentRead: true,
+    });
+    const stockCommand = new ScanCommand({
       TableName: process.env.STOCK_TABLE_NAME,
-    }).promise();
+      ConsistentRead: true,
+    });
 
-    return productItems.map((el, i) => ({ ...el, ...stockItems[i] || {} }));
-  },
+    const { Items: productItems = [] } = await dbClient.send(productCommand);
+    const { Items: stockItems = [] } = await dbClient.send(stockCommand);
 
-  setItemToCart: async (id: string, count: number) => {
-    const { Item: stockItem } = await dbClient.get({
-      TableName: process.env.STOCK_TABLE_NAME,
-      Key: { product_id: id },
-    }).promise();
-
-    if (stockItem.count > count) {
-      await dbClient.put({
-        TableName: process.env.CART_TABLE_NAME,
-        Item: { product_id: id, count },
-      }).promise();
-    } else {
-      throw new Error('Stock does not contain such amount of items');
-    }
+    return productItems.map((el, i) => ({ ...unmarshall(el), ...unmarshall(stockItems[i]) || {} }));
   },
 
   createItem: async({ count, title, description, price }) => {
@@ -59,27 +50,31 @@ export const productRepository = {
       count,
     };
 
-    await dbClient.transactWrite({
+    const command = new TransactWriteItemsCommand({
       TransactItems: [
         {
           Put: {
             TableName: process.env.PRODUCT_TABLE_NAME,
-            Item: productItem
+            Item: marshall(productItem)
           }
         },
         {
           Put: {
             TableName: process.env.STOCK_TABLE_NAME,
-            Item: stockItem,
+            Item: marshall(stockItem),
           }
         }
-      ],
-    }, function(err, data) {
-      if (err) console.log(err, err.stack); // an error occurred
-      else     console.log(data);         // successful response
-    }).promise();
+      ]
+    });
+    try {
+      console.log(command);
+      await dbClient.send(command);
+      console.log('Success');
+    } catch(err) {
+      console.log(err);
+      return { succeed: false, message: err };
+    }
 
-    console.log('item successfully created');
-    return { result: 'success' };
+    return { succeed: true };
   }
 };

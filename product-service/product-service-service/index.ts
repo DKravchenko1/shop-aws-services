@@ -6,7 +6,7 @@ export const ProductServiceService: IService = {
   getItemById: async (event) => {
     try {
       const { id } = event?.pathParameters;
-      const item = await productRepository.getItemById(id);
+      const item = await productRepository.getItemById({id});
 
       if (!item) {
         return getNoFoundError();
@@ -28,14 +28,6 @@ export const ProductServiceService: IService = {
       return getResult(items);
     } catch (e) {
       console.log(e);
-      return getInternalError(e);
-    }
-  },
-
-  setItemToCart: async (id, count) => {
-    try {
-      return getResult(await productRepository.setItemToCart(id, count));
-    } catch (e) {
       return getInternalError(e);
     }
   },

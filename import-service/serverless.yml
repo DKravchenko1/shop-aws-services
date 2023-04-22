@@ -9,7 +9,7 @@ provider:
   profile: denis-kravchenko
   stage: dev
   environment:
-    UPLOADED_BUCKET_NAME: "denis-kravchenko-uploaded-files"
+    UPLOADED_BUCKET_NAME: "denis-kravchenko-uploaded-files-2"
   iam:
     role:
       name: ImportFilesRole
@@ -29,7 +29,10 @@ provider:
           Action: "s3:ListBucket"
           Resource:
             - arn:aws:s3:::${self:provider.environment.UPLOADED_BUCKET_NAME}
-
+        - Effect: "Allow"
+          Action:
+            - sns:Publish
+          Resource: "*"
 
 plugins:
   - serverless-webpack
@@ -42,6 +45,34 @@ custom:
     includeModules: true
     keepOutputDirectory: true
   s3BucketName: ${self:provider.environment.UPLOADED_BUCKET_NAME}
+  importParsedDataTopicSNS: "ImportParsedDataTopicSNS"
+  region: us-east-1
+
+functions:
+  importProductsFile:
+    handler: import-service-handlers/import-product-file.handler
+    events:
+      - http:
+          method: GET
+          path: import
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                name: true
+
+  importFileParser:
+    handler: import-service-handlers/import-file-parser.handler
+    environment:
+      TOPIC_ARN:
+        Ref: ImportParsedDataTopicSNS
+    events:
+      - s3:
+          bucket: !Ref UploadedFilesS3Bucket
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploaded/
+          existing: true
 
 resources:
   Resources:
@@ -62,26 +93,16 @@ resources:
                 - DELETE
               AllowedOrigins:
                 - "*"
-
-functions:
-  importProductsFile:
-    handler: import-service-handlers/import-product-file.handler
-    events:
-      - http:
-          method: GET
-          path: import
-          cors: true
-          request:
-            parameters:
-              querystrings:
-                name: true
-
-  importFileParser:
-    handler: import-service-handlers/import-file-parser.handler
-    events:
-      - s3:
-          bucket: !Ref UploadedFilesS3Bucket
-          event: s3:ObjectCreated:*
-          rules:
-            - prefix: uploaded/
-          existing: tru
+    ImportParsedDataTopicSNS:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: ${self:custom.importParsedDataTopicSNS}
+        Subscription:
+          - Protocol: sqs
+            Endpoint: !ImportValue CatalogItemsQueueArn
+  Outputs:
+    ImportParsedDataTopicSNSOutput:
+      Value:
+        'Ref': ImportParsedDataTopicSNS
+      Export:
+        Name: ImportParsedDataTopicSNSArn
