@@ -7,6 +7,8 @@ export const handler = async (event: SQSEvent) => {
   const { Records: records } = event;
   const { TOPIC_ARN } = process.env;
 
+  console.log('Catalog Batch Process Started', records);
+
   const messages = await Promise.all(records.map(async (record) => {
     const { Message: message } = JSON.parse(record.body);
     const parsedMessage = JSON.parse(message);
