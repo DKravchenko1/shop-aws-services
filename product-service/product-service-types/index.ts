@@ -12,7 +12,7 @@ export type ProductEntity = ProductDTO & {
 export type Response = {
   statusCode: number;
   body: string;
-  headers: Record<string, string>;
+  headers: Record<string, string | boolean>;
 }
 
 export interface IService {

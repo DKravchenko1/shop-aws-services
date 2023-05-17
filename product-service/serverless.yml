@@ -14,6 +14,19 @@ provider:
     CART_TABLE: "CartTable"
     CATALOG_ITEMS_QUEUE_NAME: "catalogItemsQueue"
     CREATE_PRODUCT_SNS_TOPIC: "createProductTopic"
+  httpApi:
+    cors: true
+    authorizers:
+      httpApiRequestAuthorizer:
+        name: 'httpApiRequestAuthorizer'
+        functionArn: ${ssm:AuthArn}
+        type: 'request'
+        enableSimpleResponses: true
+        payloadVersion: '2.0'
+        identitySource:
+          - $request.header.Authorization
+  logs:
+    httpApi: true
   iam:
     role:
       name: DynamoDBAccessRole
@@ -44,6 +57,10 @@ provider:
           Action:
             - sns:Publish
             - sns:Subscribe
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - lambda:invokeFunction
           Resource: "*"
 
 plugins:
@@ -156,26 +173,29 @@ functions:
   getProductById:
     handler: get-product-by-id/get-product-by-id.handler
     events:
-      - http:
+      - httpApi:
           method: GET
-          path: products/{id}
-          cors: true
+          path: /products/{id}
+          authorizer:
+            name: httpApiRequestAuthorizer
 
   getProductsList:
     handler: get-products-list/get-products-list.handler
     events:
-      - http:
+      - httpApi:
           method: GET
-          path: products
-          cors: true
+          path: /products
+          authorizer:
+            name: httpApiRequestAuthorizer
 
   createProduct:
     handler: create-product/create-product.handler
     events:
-      - http:
+      - httpApi:
           method: POST
-          path: products
-          cors: true
+          path: /products
+          authorizer:
+            name: httpApiRequestAuthorizer
 
   catalogBatchProcess:
     handler: catalog-batch-process/catalog-batch-process.handler
@@ -189,3 +209,4 @@ functions:
               - CatalogItemsQueue
               - Arn
           batchSize: 5
+          maximumBatchingWindow: 30

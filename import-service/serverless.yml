@@ -10,6 +10,17 @@ provider:
   stage: dev
   environment:
     UPLOADED_BUCKET_NAME: "denis-kravchenko-uploaded-files-2"
+  httpApi:
+    cors: true
+    authorizers:
+      httpApiRequestAuthorizer:
+        name: 'httpApiRequestAuthorizer'
+        functionArn: ${ssm:AuthArn}
+        type: 'request'
+        enableSimpleResponses: true
+        payloadVersion: '2.0'
+        identitySource:
+          - $request.header.Authorization
   iam:
     role:
       name: ImportFilesRole
@@ -52,14 +63,11 @@ functions:
   importProductsFile:
     handler: import-service-handlers/import-product-file.handler
     events:
-      - http:
+      - httpApi:
           method: GET
-          path: import
-          cors: true
-          request:
-            parameters:
-              querystrings:
-                name: true
+          path: /import
+          authorizer:
+            name: httpApiRequestAuthorizer
 
   importFileParser:
     handler: import-service-handlers/import-file-parser.handler

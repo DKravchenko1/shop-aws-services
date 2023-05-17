@@ -1,0 +1,36 @@
+service: authorization-service
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  profile: denis-kravchenko
+  stage: dev
+  httpApi:
+    cors: true
+  iam:
+    role:
+      name: authLambda
+      statements:
+        - Effect: Allow
+          Action:
+            - execute-api:Invoke
+          Resource: "*"
+
+plugins:
+  - serverless-webpack
+  - serverless-dotenv-plugin
+
+custom:
+  webpack:
+    webpackConfig: "./webpack.config.js"
+    includeModules: true
+    keepOutputDirectory: true
+
+functions:
+  BasicAuthorizer:
+    handler: handlers/basic-authorizer.handler
+    events:
+      - httpApi:
+          path: /
+          method: GET
