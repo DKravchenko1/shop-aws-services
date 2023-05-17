@@ -7,25 +7,26 @@ export const handler = async (event: SQSEvent) => {
   const { Records: records } = event;
   const { TOPIC_ARN } = process.env;
 
-  await Promise.all(records.map(async (record) => {
+  console.log('Catalog Batch Process Started', records);
+
+  const messages = await Promise.all(records.map(async (record) => {
     const { Message: message } = JSON.parse(record.body);
     const parsedMessage = JSON.parse(message);
-    const result = await productRepository.createItem(parsedMessage);
+    return new Promise((resolve, reject) => {
+      productRepository.createItem(parsedMessage)
+        .then(() => resolve(parsedMessage))
+        .catch((e) => reject(e));
+    });
+  })).catch((err) => console.log('error on creating Items', err));
 
-    const emailParams = {
-      Message: message,
-      TopicArn: TOPIC_ARN,
-    };
+  const emailParams = {
+    Message: JSON.stringify(messages[0]),
+    TopicArn: TOPIC_ARN,
+  };
 
-    console.log('result -> ', result);
-    console.log ('email -> ', emailParams);
-    console.log('parsedMessage -> ', parsedMessage);
-    const command = new PublishCommand(emailParams);
+  const command = new PublishCommand(emailParams);
 
-    await snsClient.send(command);
-
-    console.log ('the email sent');
-  }));
+  await snsClient.send(command);
 
   return { statusCode: 200 };
 }

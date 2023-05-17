@@ -10,7 +10,7 @@ export const getNoFoundError = () => {
 
 export const getInternalError = (e) => {
   return {
-    statusCode: 500,
+    statusCode: 501,
     body: JSON.stringify(e),
     message: "Internal server error",
     headers,
