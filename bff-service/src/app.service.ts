@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { catchError, firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AppService {
@@ -10,15 +11,25 @@ export class AppService {
   }
 
   async callToService({ method, params, url, headers }) {
-    // const serviceUrl = this.getServiceUrl(params.service);
+    const serviceUrl = this.getServiceUrl(params.service);
     // // const urlWithoutPrefix = this.getUrlWithoutPrefix(url);
-    console.log('config', headers);
-    console.log(process.env.PRODUCT_HOST);
-    return this.httpService.get(process.env.PRODUCT_HOST + url, { headers });
+    // console.log('config', headers);
+    console.log('serviceUrl', serviceUrl+url);
+    const { data } = await firstValueFrom(this.httpService.request({
+      method: method,
+      url: serviceUrl+url,
+      headers: {
+        Authorization: headers.authorization,
+      }
+    }));
+
+    console.log('response ->', data);
+
+    return data;
   }
 
   getServiceUrl(service) {
-    return service === 'product' ? process.env.PRODUCT_HOST : service === 'cart' ? process.env.PRODUCT_HOST : '';
+    return service === 'products' ? process.env.PRODUCT_HOST : service === 'cart' ? process.env.PRODUCT_HOST : '';
   }
 
   getUrlWithoutPrefix(url: string): string {

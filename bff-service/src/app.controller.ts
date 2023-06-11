@@ -15,16 +15,16 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get(':service')
+  @Get(':service/:id')
   async fetchData(
     @Request() request,
   ) {
-    const { query, method, url, params } = request;
+    const { query, method, url, params, headers } = request;
     console.log('Headers', request.headers);
     console.log('url', url);
     console.log('Query parameters', query);
     console.log('Path parameters', params);
-    return await this.appService.callToService({ method, params, url, headers: request.headers });
+    return this.appService.callToService({ method, params, url, headers });
   }
 
 }
