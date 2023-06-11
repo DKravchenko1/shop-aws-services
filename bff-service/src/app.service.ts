@@ -10,15 +10,11 @@ export class AppService {
   }
 
   async callToService({ method, params, url, headers }) {
-    const serviceUrl = this.getServiceUrl(params.service);
-    // const urlWithoutPrefix = this.getUrlWithoutPrefix(url);
-    const config = {
-      method: method,
-      url: serviceUrl,
-      headers: headers,
-    }
-    console.log('config', config);
-    return this.httpService.request(config)
+    // const serviceUrl = this.getServiceUrl(params.service);
+    // // const urlWithoutPrefix = this.getUrlWithoutPrefix(url);
+    console.log('config', headers);
+    console.log(process.env.PRODUCT_HOST);
+    return this.httpService.get(process.env.PRODUCT_HOST + url, { headers });
   }
 
   getServiceUrl(service) {
