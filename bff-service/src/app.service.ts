@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { AxiosHeaders, AxiosRequestConfig } from 'axios';
 
 @Injectable()
 export class AppService {
@@ -10,7 +9,7 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async callToService({ method, params, url, headers }: Partial<AxiosRequestConfig>) {
+  async callToService({ method, params, url, headers }) {
     const serviceUrl = this.getServiceUrl(params.service);
     // const urlWithoutPrefix = this.getUrlWithoutPrefix(url);
     const config = {
