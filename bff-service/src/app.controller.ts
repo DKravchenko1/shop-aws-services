@@ -15,7 +15,7 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get(':service/:id')
+  @Get([':service',':service/:id'])
   async fetchData(
     @Request() request,
   ) {
