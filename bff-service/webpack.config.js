@@ -1,15 +1,12 @@
 const path = require("path");
-const slsWebpack = require("serverless-webpack");
-const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
   mode: "production",
-  entry: slsWebpack.lib.entries,
+  entry: './main.ts',
   target: "node",
   resolve: {
     extensions: [".ts", ".js"],
   },
-  externals: [nodeExternals()],
   module: {
     rules: [
       {

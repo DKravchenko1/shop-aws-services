@@ -18,7 +18,7 @@ describe('get-product-by-id', () => {
 
   test('should make call to service and return product by id', async () => {
     const mockedEvent = {queryStringParameters: {id: '1'}} as unknown as APIGatewayProxyEventV2;
-    const result = await handler(mockedEvent, null, null);
+    const result = await handler(mockedEvent, null);
 
     expect(result).toBe(mockedResult);
     expect(ProductServiceService.getItemById).toBeCalledTimes(1);
