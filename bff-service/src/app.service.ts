@@ -29,7 +29,7 @@ export class AppService {
   }
 
   getServiceUrl(service) {
-    return service === 'products' ? process.env.PRODUCT_HOST : service === 'cart' ? process.env.PRODUCT_HOST : '';
+    return service === 'products' ? process.env.PRODUCT_HOST : service === 'cart' ? process.env.CART_HOST : '';
   }
 
   getUrlWithoutPrefix(url: string): string {
