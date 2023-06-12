@@ -3,28 +3,27 @@ import { IService, ProductDTO } from '../product-service-types';
 import { getInternalError, getNoFoundError, getResult } from '../product-service-utils';
 
 export const ProductServiceService: IService = {
-  getItemById: async (event) => {
-    try {
-      const { id } = event?.pathParameters;
-      const item = await productRepository.getItemById({id});
+  getItemById: async (id) => {
+    const item = await productRepository.getItemById(id);
 
-      if (!item) {
-        return getNoFoundError();
-      }
-
-      return getResult(item);
-    } catch (e) {
-      return getInternalError(e);
+    if (!item) {
+      return getNoFoundError();
     }
+
+    console.log('getItemById:item ->', item);
+
+    return getResult(item);
   },
 
   getItems: async () => {
     try {
-      const items = await productRepository.getItems();
-
-      if (!items?.length) {
+      const items = await productRepository.getItems() || [];
+      console.log('items');
+      const itemsLength = items?.length;
+      if (!itemsLength) {
         return getNoFoundError();
       }
+      console.log('items', items);
       return getResult(items);
     } catch (e) {
       console.log(e);
@@ -34,9 +33,11 @@ export const ProductServiceService: IService = {
 
   createItem: async (productDTO: ProductDTO) => {
     try {
-      return getResult(await productRepository.createItem(productDTO))
+      const result = await productRepository.createItem(productDTO);
+      return getResult(result);
     } catch (e) {
-      return getInternalError(e);
+      console.log(e);
+      throw getInternalError(e);
     }
   },
 }

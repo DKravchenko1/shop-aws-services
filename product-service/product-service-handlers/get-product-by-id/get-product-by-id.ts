@@ -1,10 +1,12 @@
-import { APIGatewayProxyEventV2, APIGatewayProxyHandlerV2 } from 'aws-lambda';
+import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import {ProductServiceService} from '../../product-service-service';
 
-export const handler: APIGatewayProxyHandlerV2 = async (
-  event: APIGatewayProxyEventV2
+export const handler: (event: APIGatewayProxyEventV2, context: Context) => Promise<any> = async (
+  event: APIGatewayProxyEventV2,
+  context: Context,
 ) => {
-  console.log(`incoming data -> ${event.queryStringParameters}`);
-
-  return ProductServiceService.getItemById(event);
+  context.callbackWaitsForEmptyEventLoop = false;
+  console.log(`incoming data -> ${JSON.stringify(event)}`);
+  const { id } = event.pathParameters;
+  return ProductServiceService.getItemById(id);
 };

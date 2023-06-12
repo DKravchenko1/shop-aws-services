@@ -3,9 +3,11 @@ import {ProductServiceService} from '../../product-service-service';
 import { getValidationError } from '../../product-service-utils';
 
 export const handler: APIGatewayProxyHandlerV2 = async (
-  event: APIGatewayProxyEventV2
+  event: APIGatewayProxyEventV2,
+  context,
 ) => {
-  console.log(`incoming data -> ${event.body}`);
+  context.callbackWaitsForEmptyEventLoop = false;
+  console.log(`incoming data -> ${event?.body}`);
   const { title, description, count, price } = JSON.parse(event?.body) || {};
   if (!title || !description || !count || !price) {
     return getValidationError('one of the property is incorrect');

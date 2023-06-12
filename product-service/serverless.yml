@@ -33,13 +33,6 @@ provider:
       statements:
         - Effect: Allow
           Action:
-            - dynamodb:Query
-            - dynamodb:Scan
-            - dynamodb:ConditionCheckItem
-            - dynamodb:UpdateItem
-            - dynamodb:DeleteItem
-            - dynamodb:GetItem
-            - dynamodb:PutItem
             - sqs:DeleteMessage
             - sqs:GetQueueAttributes
             - sqs:ReceiveMessage
@@ -66,6 +59,8 @@ provider:
 plugins:
   - serverless-webpack
   - serverless-functions-base-path
+  - serverless-dotenv-plugin
+  - serverless-offline
 
 custom:
   functionsBasePath: product-service-handlers
@@ -74,50 +69,17 @@ custom:
     includeModules: true
     keepOutputDirectory: true
 
+package:
+  individually: true
+  excludeDevDependencies: true
+  exclude:
+    - node_modules/**
+    - ./**
+  include:
+    - dist/**
+
 resources:
   Resources:
-    ProductTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: "id"
-            AttributeType: "S"
-        KeySchema:
-          - AttributeName: "id"
-            KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.PRODUCT_TABLE_NAME}
-    StockTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: "product_id"
-            AttributeType: "S"
-        KeySchema:
-          - AttributeName: "product_id"
-            KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.STOCK_TABLE_NAME}
-    CartTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: "product_id"
-            AttributeType: "S"
-        KeySchema:
-          - AttributeName: "product_id"
-            KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.CART_TABLE}
     CatalogItemsQueue:
       Type: AWS::SQS::Queue
       Properties:
