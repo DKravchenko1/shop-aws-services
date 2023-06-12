@@ -1,10 +1,5 @@
-import { Controller, Get, All, Param, Query, Request } from '@nestjs/common';
+import { Controller, Get, All, Request } from '@nestjs/common';
 import { AppService } from './app.service';
-
-enum RecipientServices {
-  product = 'product',
-  cart = 'cart',
-}
 
 @Controller()
 export class AppController {
@@ -19,11 +14,7 @@ export class AppController {
   async fetchData(
     @Request() request,
   ) {
-    const { query, method, url, params, headers, body } = request;
-    console.log('Headers', request.headers);
-    console.log('url', url);
-    console.log('Query parameters', query);
-    console.log('Path parameters', params);
+    const {  method, url, params, headers, body } = request;
     return this.appService.callToService({ method, params, url, headers, body });
   }
 

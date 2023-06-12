@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { catchError, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AppService {
@@ -12,8 +12,7 @@ export class AppService {
 
   async callToService({ method, params, url, headers, body }) {
     const serviceUrl = this.getServiceUrl(params.service);
-    // // const urlWithoutPrefix = this.getUrlWithoutPrefix(url);
-    // console.log('config', headers);
+
     console.log('serviceUrl', serviceUrl+url);
     const { data } = await firstValueFrom(this.httpService.request({
       method: method,
