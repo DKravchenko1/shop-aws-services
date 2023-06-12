@@ -10,7 +10,7 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async callToService({ method, params, url, headers }) {
+  async callToService({ method, params, url, headers, body }) {
     const serviceUrl = this.getServiceUrl(params.service);
     // // const urlWithoutPrefix = this.getUrlWithoutPrefix(url);
     // console.log('config', headers);
@@ -20,7 +20,8 @@ export class AppService {
       url: serviceUrl+url,
       headers: {
         Authorization: headers.authorization,
-      }
+      },
+      data: body,
     }));
 
     console.log('response ->', data);
